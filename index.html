@@ -7,7 +7,7 @@
   <meta name="description" content="PoolCheck V3, guia passo a passo para manter a piscina pronta.">
   <title>PoolCheck V3</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
 <header class="topbar">
@@ -34,6 +34,16 @@
       <button id="primaryAction" class="primary full">Analisar água</button>
     </article>
 
+    <article class="card weather-card">
+      <div class="section-head"><div><p class="eyebrow">Temperatura local</p><h2 id="weatherTemperature">Localização por definir</h2></div><button id="updateWeatherBtn" class="text-button">Atualizar</button></div>
+      <p id="weatherDetail" class="muted">Autorize a localização para obter a temperatura atual e ajustar a recomendação de filtração.</p>
+    </article>
+
+    <article class="card">
+      <div class="section-head"><div><p class="eyebrow">Manutenção semanal</p><h2>Tarefas da piscina</h2></div><button id="notificationBtn" class="text-button">Ativar lembrete</button></div>
+      <div id="maintenanceList" class="maintenance-list"></div>
+    </article>
+
     <article class="card compact">
       <div class="row-between"><div><p class="eyebrow">Próxima tarefa</p><strong id="nextTask">Primeira análise</strong></div><button data-go="details" class="text-button">Ver detalhes</button></div>
       <p id="nextTaskDetail" class="muted">Ainda não existe uma análise registada.</p>
@@ -44,7 +54,7 @@
     <div class="page-title"><p class="eyebrow">Nova análise</p><h1 id="analysisTitle">Como quer analisar?</h1><p>Escolha a opção mais simples para si.</p></div>
     <div class="choice-grid">
       <button id="photoAnalysisBtn" class="choice-card">
-        <span class="choice-number">1</span><strong>Fotografar tira</strong><small>Fotografe a tira e deixe o PoolCheck estimar automaticamente os valores.</small>
+        <span class="choice-number">1</span><strong>Fotografar tira</strong><small>Use a câmara para guardar a fotografia e introduzir os valores lidos.</small>
       </button>
       <button id="manualAnalysisBtn" class="choice-card">
         <span class="choice-number">2</span><strong>Introduzir valores</strong><small>Registe manualmente os resultados da tira ou do equipamento.</small>
@@ -54,19 +64,7 @@
     <article id="analysisFormCard" class="card hidden">
       <div class="section-head"><div><p class="eyebrow">Valores da água</p><h2>Registar análise</h2></div><button id="closeAnalysisForm" class="text-button">Fechar</button></div>
       <form id="analysisForm" class="form-grid">
-        <div class="full hidden" id="photoField">
-          <label class="file-field">Fotografia da tira<input id="stripPhoto" type="file" accept="image/*" capture="environment"></label>
-          <div id="scannerPanel" class="scanner-panel hidden">
-            <p class="muted">Coloque a tira direita, preencha a imagem e alinhe as três zonas coloridas com os círculos.</p>
-            <canvas id="stripCanvas"></canvas>
-            <div class="scanner-controls">
-              <label>Ordem das zonas<select id="stripOrder"><option value="chlorine-ph-alk">Cloro, pH, alcalinidade</option><option value="alk-ph-chlorine">Alcalinidade, pH, cloro</option><option value="ph-chlorine-alk">pH, cloro, alcalinidade</option></select></label>
-              <button id="rotateStrip" type="button" class="secondary">Rodar fotografia</button>
-              <button id="analyseStrip" type="button" class="primary">Analisar automaticamente</button>
-            </div>
-            <div id="scanResult" class="scan-result hidden"></div>
-          </div>
-        </div>
+        <label class="full file-field hidden" id="photoField">Fotografia da tira<input id="stripPhoto" type="file" accept="image/*" capture="environment"></label>
         <label>pH<input id="ph" type="number" min="5" max="10" step="0.1" required placeholder="7,2"></label>
         <label>Cloro livre, ppm<input id="freeChlorine" type="number" min="0" max="20" step="0.1" required placeholder="1,5"></label>
         <label>Alcalinidade, ppm<input id="alkalinity" type="number" min="0" max="400" step="1" required placeholder="100"></label>
@@ -134,9 +132,8 @@
   <button data-view="details"><span>Piscina</span></button>
 </nav>
 <div id="toast" role="status" aria-live="polite"></div>
-<script src="storage.js"></script>
-<script src="chemistry.js"></script>
-<script src="strip-analyzer.js"></script>
-<script src="app.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/chemistry.js"></script>
+<script src="js/app.js"></script>
 </body>
 </html>

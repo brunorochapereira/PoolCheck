@@ -1,24 +1,29 @@
 # PoolCheck V3
 
-Versão preparada para carregamento direto na raiz de um repositório GitHub Pages.
+Guia passo a passo para manter a piscina pronta, dirigido a utilizadores sem conhecimentos técnicos.
 
-## Ficheiros obrigatórios
+## Alterações principais
 
-- index.html
-- styles.css
-- storage.js
-- chemistry.js
-- strip-analyzer.js
-- app.js
-- manifest.json
-- sw.js
+- Navegação reduzida para Hoje, Analisar, Assistente e Piscina.
+- Estado geral por texto e cor.
+- Máximo de três ações prioritárias.
+- Plano de tratamento sequencial, uma ação de cada vez.
+- Valores químicos ocultos em detalhes.
+- Configuração inicial guiada.
+- Gestão de stock, custos e equipamento removida do fluxo principal.
+- Temperatura configurável para reforçar a filtração.
+- Dados guardados localmente e exportáveis em JSON.
 
-## Publicação no GitHub
+## Publicação
 
-1. Extraia o ZIP.
-2. No repositório, remova ou substitua os ficheiros antigos da V3.
-3. Carregue todos os ficheiros desta pasta para a raiz do repositório.
-4. Aguarde a conclusão do deployment do GitHub Pages.
-5. Abra o endereço do site e faça uma atualização forçada do navegador.
+Copie todo o conteúdo desta pasta para a raiz do repositório GitHub Pages. Substitua os ficheiros da versão anterior, mantendo uma cópia de segurança antes da substituição.
 
-A leitura automática da tira está incluída como versão inicial. A calibração final das cores depende das fotografias da escala da embalagem.
+
+## Atualização de manutenção e meteorologia
+
+- Temperatura exterior automática através da localização do dispositivo e Open-Meteo.
+- Recomendação de maior filtração quando a temperatura atinge o limite configurado.
+- Checklist semanal: pré-filtro da bomba, filtro, backwash e aspiração com robô.
+- Notificação das tarefas pendentes quando a aplicação é aberta, mediante autorização do dispositivo.
+
+Nota: notificações web no iPhone requerem normalmente a aplicação instalada no ecrã principal e autorização explícita do utilizador.
