@@ -34,3 +34,8 @@ Nota: notificações web no iPhone requerem normalmente a aplicação instalada 
 A aplicação consulta diariamente a previsão local através da API Open-Meteo, após autorização da localização. A meteorologia não ocupa o ecrã principal. Apenas são apresentados alertas quando calor, radiação UV, chuva ou vento podem afetar a piscina.
 
 A atualização automática ocorre quando a aplicação é aberta e a informação guardada tem mais de 24 horas.
+
+
+## Manutenção configurável
+
+Cada tarefa pode ser ativada ou desativada e configurada com recorrência em dias, semanas ou meses. A próxima execução é calculada a partir da última conclusão.

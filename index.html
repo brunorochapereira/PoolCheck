@@ -41,8 +41,9 @@
     </article>
 
     <article class="card">
-      <div class="section-head"><div><p class="eyebrow">Manutenção semanal</p><h2>Tarefas da piscina</h2></div><button id="notificationBtn" class="text-button">Ativar lembrete</button></div>
+      <div class="section-head"><div><p class="eyebrow">Manutenção</p><h2>Tarefas da piscina</h2></div><button id="notificationBtn" class="text-button">Ativar lembrete</button></div>
       <div id="maintenanceList" class="maintenance-list"></div>
+      <button id="manageMaintenanceBtn" class="secondary full maintenance-manage">Configurar tarefas e recorrências</button>
     </article>
 
     <article class="card compact">
@@ -105,6 +106,13 @@
       </form>
     </article>
 
+
+    <article class="card">
+      <div class="section-head"><div><p class="eyebrow">Personalização</p><h2>Manutenção</h2></div></div>
+      <p class="muted">Ative apenas as tarefas aplicáveis à sua piscina e defina a recorrência de cada uma.</p>
+      <div id="maintenanceSettingsList" class="maintenance-settings-list"></div>
+    </article>
+
     <article class="card">
       <div class="section-head"><div><p class="eyebrow">Em background</p><h2>Previsão meteorológica</h2></div><button id="updateWeatherBtn" class="text-button">Atualizar agora</button></div>
       <p id="weatherSettingsStatus" class="muted">A localização será utilizada apenas para avaliar o impacto do tempo na piscina.</p>
@@ -141,6 +149,22 @@
   <button data-view="assistant"><span>Assistente</span></button>
   <button data-view="details"><span>Piscina</span></button>
 </nav>
+
+<div id="maintenanceModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="maintenanceModalTitle">
+  <div class="modal-backdrop" data-close-maintenance></div>
+  <div class="modal-panel">
+    <div class="section-head"><div><p class="eyebrow">Recorrência</p><h2 id="maintenanceModalTitle">Editar tarefa</h2></div><button class="text-button" data-close-maintenance>Fechar</button></div>
+    <form id="maintenanceForm" class="form-grid">
+      <input id="maintenanceTaskId" type="hidden">
+      <label class="full switch-line"><input id="maintenanceEnabled" type="checkbox"> Tarefa ativa</label>
+      <label class="full">Nome da tarefa<input id="maintenanceTitle" required></label>
+      <label>Repetir a cada<input id="maintenanceIntervalValue" type="number" min="1" max="365" step="1" required></label>
+      <label>Período<select id="maintenanceIntervalUnit"><option value="days">Dias</option><option value="weeks">Semanas</option><option value="months">Meses</option></select></label>
+      <div class="full recurrence-preview" id="maintenancePreview"></div>
+      <button type="submit" class="primary full">Guardar recorrência</button>
+    </form>
+  </div>
+</div>
 <div id="toast" role="status" aria-live="polite"></div>
 <script src="js/storage.js"></script>
 <script src="js/chemistry.js"></script>
