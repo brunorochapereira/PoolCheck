@@ -4,27 +4,39 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0b6ea8" />
-  <meta name="description" content="PoolCheck V2, assistente inteligente para gestão integral da piscina." />
-  <title>PoolCheck V2</title>
+  <meta name="description" content="PoolCheck V3, assistente inteligente para gestão integral da piscina." />
+  <title>PoolCheck V3</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
+  <div id="v3Wizard" class="v3-wizard hidden">
+    <div class="v3-wizard-card">
+      <div class="card-head"><div><span class="eyebrow">Configuração inicial</span><h2>Começar com o PoolCheck</h2></div><button id="v3WizardExit" class="secondary">Guardar e sair</button></div>
+      <div class="v3-progress"><span id="v3ProgressBar"></span></div><p id="v3StepLabel" class="muted"></p>
+      <div id="v3WizardContent"></div>
+      <div class="dialog-actions"><button id="v3Back" class="secondary">Voltar</button><button id="v3Skip" class="link-btn">Saltar</button><button id="v3Next" class="primary">Continuar</button></div>
+    </div>
+  </div>
   <header class="topbar">
     <div>
       <div class="brand-row">
         <h1>PoolCheck</h1>
-        <span class="version-badge">V2</span>
+        <span class="version-badge">V3</span>
       </div>
       <p>Gestão inteligente da água, equipamentos e manutenção</p>
     </div>
-    <button id="installBtn" class="secondary hidden">Instalar</button>
+    <div class="button-row"><button id="openV3Wizard" class="secondary">Configuração guiada</button><button id="installBtn" class="secondary hidden">Instalar</button></div>
   </header>
 
   <nav class="tabs" aria-label="Navegação principal">
     <button data-view="dashboard" class="active">Resumo</button>
     <button data-view="analysis">Análise</button>
     <button data-view="assistant">Assistente</button>
+    <button data-view="symptoms">Diagnóstico</button>
+    <button data-view="tablets">Pastilhas</button>
+    <button data-view="calendar">Calendário</button>
+    <button data-view="seasons">Época</button>
     <button data-view="hardware">Equipamentos</button>
     <button data-view="stock">Stock</button>
     <button data-view="costs">Custos</button>
@@ -188,6 +200,11 @@
       </div>
     </section>
 
+
+    <section id="symptoms" class="view"><div class="grid two"><article class="card"><h2>Diagnóstico por sintomas</h2><div class="form-grid"><label class="full">Sintoma<select id="v3Symptom"><option value="green">Água verde</option><option value="cloudy">Água turva</option><option value="odor">Cheiro intenso a cloro</option><option value="algae">Algas nas paredes</option><option value="foam">Espuma</option><option value="loss">Cloro desaparece rapidamente</option><option value="ph">pH instável</option></select></label><button id="v3Diagnose" class="primary full">Gerar diagnóstico</button></div></article><article class="card"><h2>Resultado</h2><div id="v3Diagnosis" class="empty-state">Seleciona um sintoma.</div></article></div></section>
+    <section id="tablets" class="view"><div class="grid two"><article class="card"><h2>Registar pastilha</h2><form id="v3TabletForm" class="form-grid"><label>Data<input id="v3TabletDate" type="date" required></label><label>Quantidade<input id="v3TabletQty" type="number" min="1" value="1"></label><label>Peso, g<input id="v3TabletWeight" type="number" min="1" value="200"></label><label>Duração prevista, dias<input id="v3TabletDays" type="number" min="1" value="7"></label><label class="full">Local<select id="v3TabletLocation"><option>Skimmer</option><option>Doseador flutuante</option><option>Doseador em linha</option></select></label><button class="primary full">Guardar</button></form></article><article class="card"><h2>Estado atual</h2><div id="v3TabletCurrent" class="empty-state">Sem registos.</div></article></div><article class="card"><h2>Histórico</h2><div id="v3TabletHistory" class="history-list"></div></article></section>
+    <section id="calendar" class="view"><div class="grid two"><article class="card"><h2>Nova tarefa</h2><form id="v3TaskForm" class="form-grid"><label>Tarefa<input id="v3TaskTitle" required></label><label>Data<input id="v3TaskDate" type="date" required></label><label>Frequência<select id="v3TaskFrequency"><option value="once">Uma vez</option><option value="weekly">Semanal</option><option value="monthly">Mensal</option><option value="yearly">Anual</option></select></label><label>Categoria<select id="v3TaskCategory"><option>Água</option><option>Limpeza</option><option>Filtro</option><option>Equipamento</option><option>Sazonal</option></select></label><button class="primary full">Adicionar</button></form></article><article class="card"><h2>Calendário inteligente</h2><div id="v3TaskList" class="maintenance-list"></div></article></div></section>
+    <section id="seasons" class="view"><div class="grid two"><article class="card"><h2>Abertura da piscina</h2><div id="v3Opening" class="v3-checklist"></div></article><article class="card"><h2>Encerramento da piscina</h2><div id="v3Closing" class="v3-checklist"></div></article></div></section>
     <section id="hardware" class="view">
       <article class="card">
         <div class="card-head">
@@ -357,5 +374,6 @@
   <script src="js/weather.js"></script>
   <script src="js/github.js"></script>
   <script src="js/app.js"></script>
+  <script src="js/v3.js"></script>
 </body>
 </html>

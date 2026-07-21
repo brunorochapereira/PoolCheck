@@ -1,7 +1,8 @@
 const PoolStore = (() => {
-  const KEY = "poolcheck_state_v2";
+  const KEY = "poolcheck_state_v3";
   const defaults = {
-    profile: { name: "Piscina principal", volume: 36, latitude: null, longitude: null },
+    profile: { name: "Piscina principal", shape:"rectangular", length:6, width:4, depthMin:1.2, depthMax:1.8, volume:36, environment:"outdoor", treatment:"Cloro", filter:"Filtro de areia", liner:"", highTempThreshold:28, latitude:null, longitude:null },
+    onboarding:{completed:false,step:0}, tablets:[], tasks:[], season:{opening:{},closing:{}},
     analyses: [],
     equipment: [
       { id: crypto.randomUUID(), type: "Bomba de circulação", name: "Bomba principal", status:"ok", brand: "", model: "", installDate: "", nextMaintenance: "", notes: "" },
@@ -26,7 +27,7 @@ const PoolStore = (() => {
   };
   function load() {
     try {
-      const raw = localStorage.getItem(KEY) || localStorage.getItem("poolcheck_state_v1");
+      const raw = localStorage.getItem(KEY) || localStorage.getItem("poolcheck_state_v2") || localStorage.getItem("poolcheck_state_v1");
       if (!raw) return structuredClone(defaults);
       const parsed = JSON.parse(raw);
       return {...structuredClone(defaults),...parsed,

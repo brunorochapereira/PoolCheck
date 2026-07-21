@@ -25,6 +25,9 @@ const Chemistry = (() => {
     const air=state.weather?.daily?.temperature_2m_max?.[0];
     const temp=water ?? air ?? 24;
     let hours=Math.max(4,Math.round(temp/3));
+    const threshold=Number(state.profile?.highTempThreshold||28);
+    if(temp>=threshold) hours+=2;
+    if(temp>=threshold+4) hours+=1;
     if(state.usage.weekend==="high") hours+=2;
     if(latest?.freeChlorine!=null && latest.freeChlorine<1.5) hours+=1;
     return Math.min(12,hours);

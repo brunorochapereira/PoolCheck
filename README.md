@@ -1,46 +1,9 @@
-# PoolCheck V2
+# PoolCheck V3
 
-Versão 2 do gestor inteligente de piscina.
+Inclui migração automática da V2, configuração inicial guiada, perfil completo da piscina, temperatura configurável para reforço da filtração, diagnóstico por sintomas, gestão de pastilhas, calendário de manutenção, assistentes de abertura/encerramento e previsões simples de tendência.
 
-## Novidades
+A leitura fotográfica das tiras permanece em modo Beta assistido. A fotografia e o benchmark são guardados, mas os resultados devem ser confirmados manualmente.
 
-- Dashboard redesenhado
-- Estado consolidado da água
-- Previsão meteorológica com UV e chuva
-- Plano inteligente diário
-- Estimativa de horas de filtração
-- Estado operacional dos equipamentos
-- Gestão de stock e consumos
-- Custos por categoria e total anual
-- Gráfico de tendência de pH e cloro
-- Alertas cruzados entre água, calor, utilização, stock e hardware
-- Migração automática dos dados da versão 1
-- Sincronização GitHub mantida
+## Publicação
 
-## Estrutura
-
-```text
-PoolCheck-v2/
-├── index.html
-├── manifest.json
-├── sw.js
-├── README.md
-├── css/
-│   └── styles.css
-└── js/
-    ├── app.js
-    ├── chemistry.js
-    ├── github.js
-    ├── storage.js
-    └── weather.js
-```
-
-## GitHub
-
-Publicar este repositório no GitHub Pages.
-
-Para dados privados, usar outro repositório, por exemplo `PoolCheckData`, com token fine-grained limitado a esse repositório e permissão `Contents: Read and write`.
-
-## Nota
-
-A leitura automática da tira continua dependente da fotografia da tabela de cores do fabricante. O módulo está preparado para receber esse benchmark.
+Publicar a pasta na raiz do repositório GitHub Pages. Para forçar atualização da PWA, o cache foi alterado para `poolcheck-v3-1`.

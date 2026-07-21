@@ -1,9 +1,1 @@
-{
-  "name": "PoolCheck V2",
-  "short_name": "PoolCheck",
-  "start_url": "./",
-  "display": "standalone",
-  "background_color": "#f2f7fa",
-  "theme_color": "#0b6ea8",
-  "icons": []
-}
+{"name":"PoolCheck V3","short_name":"PoolCheck","start_url":"./","display":"standalone","background_color":"#f2f7fa","theme_color":"#0b6ea8","icons":[]}
