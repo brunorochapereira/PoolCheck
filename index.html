@@ -1,21 +1,142 @@
-const PoolChemistry=(()=>{
- const round=(n,step=10)=>Math.max(step,Math.round(n/step)*step);
- function analyse(a,pool){
-  const issues=[];const volume=Number(pool.volume)||36;
-  if(a.ph<7.2)issues.push({key:'ph-low',severity:2,title:'Corrigir o pH',reason:'O pH está abaixo do intervalo recomendado.',instruction:`Adicione aproximadamente ${round((7.2-a.ph)*volume*80)} g de pH+. Dissolva num balde com água e distribua pela piscina com a filtração ligada.`,waitHours:2,retest:true});
-  if(a.ph>7.6)issues.push({key:'ph-high',severity:2,title:'Corrigir o pH',reason:'O pH está acima do intervalo recomendado.',instruction:`Adicione aproximadamente ${round((a.ph-7.6)*volume*90)} g de pH-. Dissolva num balde com água e distribua pela piscina com a filtração ligada.`,waitHours:2,retest:true});
-  if(a.alkalinity<80)issues.push({key:'alk-low',severity:2,title:'Aumentar a alcalinidade',reason:'A alcalinidade está baixa e pode tornar o pH instável.',instruction:`Adicione aproximadamente ${round((80-a.alkalinity)*volume*1.5)} g de aumentador de alcalinidade. Distribua lentamente com a filtração ligada.`,waitHours:6,retest:true});
-  if(a.alkalinity>140)issues.push({key:'alk-high',severity:1,title:'Reduzir a alcalinidade',reason:'A alcalinidade está elevada.',instruction:'Ajuste gradualmente com redutor de pH, seguindo a dose do fabricante. Evite correções grandes de uma só vez.',waitHours:6,retest:true});
-  if(a.freeChlorine<1)issues.push({key:'chlorine-low',severity:3,title:'Aumentar o cloro',reason:'O cloro livre está baixo e a desinfeção pode ser insuficiente.',instruction:`Adicione aproximadamente ${round((1.5-a.freeChlorine)*volume*3)} g de cloro de ação rápida. Distribua com a filtração ligada.`,waitHours:8,retest:true,noSwim:true});
-  if(a.freeChlorine>3)issues.push({key:'chlorine-high',severity:3,title:'Aguardar a redução do cloro',reason:'O cloro livre está acima do intervalo recomendado.',instruction:'Não adicione mais cloro. Mantenha a piscina descoberta e a filtração ligada até o valor descer.',waitHours:6,retest:true,noSwim:true});
-  const temp=Number(a.waterTemp)||0;if(temp>=Number(pool.highTempThreshold||28))issues.push({key:'filtration',severity:1,title:'Aumentar a filtração',reason:'A temperatura da água aumenta a necessidade de circulação.',instruction:`Filtre durante cerca de ${Math.min(14,Math.max(8,Math.round(temp/2)))} horas hoje.`,waitHours:0,retest:false});
-  issues.sort((x,y)=>y.severity-x.severity);
-  const urgent=issues.some(i=>i.severity===3);const status=urgent?'bad':issues.length?'warn':'good';
-  return{status,label:status==='good'?'Boa':status==='warn'?'Requer atenção':'Crítica',message:status==='good'?'A água está equilibrada e pronta para utilização.':urgent?'Não utilize a piscina antes de concluir o tratamento e repetir a análise.':'Existem correções simples a realizar.',issues:issues.slice(0,3),allIssues:issues};
- }
- function planFrom(result){
-  if(!result.allIssues.length)return{createdAt:new Date().toISOString(),current:0,completed:false,steps:[{title:'Manter a rotina',reason:'A água está equilibrada.',instruction:'Não é necessário adicionar produtos. Faça uma nova análise dentro de 7 dias.',waitHours:0,retest:false}]};
-  return{createdAt:new Date().toISOString(),current:0,completed:false,steps:result.allIssues.map((i,idx)=>({...i,order:idx+1,done:false}))};
- }
- return{analyse,planFrom};
-})();
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#096b72">
+  <meta name="description" content="PoolCheck V3, guia passo a passo para manter a piscina pronta.">
+  <title>PoolCheck V3</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="topbar">
+  <div><strong>PoolCheck</strong><span>V3</span></div>
+  <button id="installBtn" class="ghost hidden">Instalar</button>
+</header>
+
+<main class="app-shell">
+  <section id="onboarding" class="screen onboarding hidden" aria-labelledby="onboardingTitle">
+    <div class="step-indicator"><span id="onboardingProgress">1 de 5</span></div>
+    <div id="onboardingContent"></div>
+  </section>
+
+  <section id="today" class="screen active" aria-labelledby="todayTitle">
+    <article id="statusCard" class="status-card neutral">
+      <p class="eyebrow">Estado da piscina</p>
+      <div class="status-line"><span id="statusDot" class="status-dot"></span><h1 id="todayTitle">Sem análise</h1></div>
+      <p id="statusMessage">Faça a primeira análise para saber se a piscina está pronta.</p>
+    </article>
+
+    <article class="card">
+      <div class="section-head"><div><p class="eyebrow">Hoje</p><h2>O que tem de fazer</h2></div><span id="urgentBadge" class="badge hidden">Urgente</span></div>
+      <div id="todayActions" class="action-list"></div>
+      <button id="primaryAction" class="primary full">Analisar água</button>
+    </article>
+
+    <article class="card compact">
+      <div class="row-between"><div><p class="eyebrow">Próxima tarefa</p><strong id="nextTask">Primeira análise</strong></div><button data-go="details" class="text-button">Ver detalhes</button></div>
+      <p id="nextTaskDetail" class="muted">Ainda não existe uma análise registada.</p>
+    </article>
+  </section>
+
+  <section id="analysis" class="screen" aria-labelledby="analysisTitle">
+    <div class="page-title"><p class="eyebrow">Nova análise</p><h1 id="analysisTitle">Como quer analisar?</h1><p>Escolha a opção mais simples para si.</p></div>
+    <div class="choice-grid">
+      <button id="photoAnalysisBtn" class="choice-card">
+        <span class="choice-number">1</span><strong>Fotografar tira</strong><small>Fotografe a tira e deixe o PoolCheck estimar automaticamente os valores.</small>
+      </button>
+      <button id="manualAnalysisBtn" class="choice-card">
+        <span class="choice-number">2</span><strong>Introduzir valores</strong><small>Registe manualmente os resultados da tira ou do equipamento.</small>
+      </button>
+    </div>
+
+    <article id="analysisFormCard" class="card hidden">
+      <div class="section-head"><div><p class="eyebrow">Valores da água</p><h2>Registar análise</h2></div><button id="closeAnalysisForm" class="text-button">Fechar</button></div>
+      <form id="analysisForm" class="form-grid">
+        <div class="full hidden" id="photoField">
+          <label class="file-field">Fotografia da tira<input id="stripPhoto" type="file" accept="image/*" capture="environment"></label>
+          <div id="scannerPanel" class="scanner-panel hidden">
+            <p class="muted">Coloque a tira direita, preencha a imagem e alinhe as três zonas coloridas com os círculos.</p>
+            <canvas id="stripCanvas"></canvas>
+            <div class="scanner-controls">
+              <label>Ordem das zonas<select id="stripOrder"><option value="chlorine-ph-alk">Cloro, pH, alcalinidade</option><option value="alk-ph-chlorine">Alcalinidade, pH, cloro</option><option value="ph-chlorine-alk">pH, cloro, alcalinidade</option></select></label>
+              <button id="rotateStrip" type="button" class="secondary">Rodar fotografia</button>
+              <button id="analyseStrip" type="button" class="primary">Analisar automaticamente</button>
+            </div>
+            <div id="scanResult" class="scan-result hidden"></div>
+          </div>
+        </div>
+        <label>pH<input id="ph" type="number" min="5" max="10" step="0.1" required placeholder="7,2"></label>
+        <label>Cloro livre, ppm<input id="freeChlorine" type="number" min="0" max="20" step="0.1" required placeholder="1,5"></label>
+        <label>Alcalinidade, ppm<input id="alkalinity" type="number" min="0" max="400" step="1" required placeholder="100"></label>
+        <label>Temperatura, °C<input id="waterTemp" type="number" min="0" max="45" step="0.1" placeholder="26"></label>
+        <details class="full advanced-fields"><summary>Adicionar outros valores</summary>
+          <div class="form-grid inner">
+            <label>Cloro total, ppm<input id="totalChlorine" type="number" min="0" max="20" step="0.1"></label>
+            <label>Estabilizador, ppm<input id="cya" type="number" min="0" max="300" step="1"></label>
+            <label>Dureza cálcica, ppm<input id="hardness" type="number" min="0" max="1000" step="1"></label>
+            <label class="full">Observações<textarea id="analysisNotes" rows="2"></textarea></label>
+          </div>
+        </details>
+        <button class="primary full" type="submit">Analisar e criar plano</button>
+      </form>
+    </article>
+  </section>
+
+  <section id="assistant" class="screen" aria-labelledby="assistantTitle">
+    <div class="page-title"><p class="eyebrow">Assistente</p><h1 id="assistantTitle">Próximo passo</h1><p id="assistantIntro">Faça uma análise para criar um plano.</p></div>
+    <article id="planCard" class="card plan-card"></article>
+  </section>
+
+  <section id="details" class="screen" aria-labelledby="detailsTitle">
+    <div class="page-title"><p class="eyebrow">Piscina</p><h1 id="detailsTitle">Detalhes e configuração</h1><p>Informação técnica disponível apenas quando precisa.</p></div>
+
+    <article class="card">
+      <div class="section-head"><h2>Perfil da piscina</h2><button id="editPoolBtn" class="text-button">Editar</button></div>
+      <div id="poolSummary" class="summary-grid"></div>
+      <form id="poolForm" class="form-grid hidden">
+        <label>Nome<input id="poolName" required></label>
+        <label>Tipo<select id="poolType"><option value="enterrada">Enterrada</option><option value="elevada">Elevada</option><option value="spa">Spa</option></select></label>
+        <label>Volume, m³<input id="poolVolume" type="number" min="1" step="0.1" required></label>
+        <label>Tratamento<select id="treatmentType"><option value="cloro">Cloro</option><option value="sal">Sal</option><option value="bromo">Bromo</option></select></label>
+        <label>Temperatura para maior filtração, °C<input id="highTempThreshold" type="number" min="20" max="35" step="1"></label>
+        <label>Cobertura<select id="hasCover"><option value="false">Não</option><option value="true">Sim</option></select></label>
+        <button class="primary full">Guardar perfil</button>
+      </form>
+    </article>
+
+    <article class="card">
+      <div class="section-head"><h2>Últimos valores</h2><button id="toggleTechnical" class="text-button">Mostrar</button></div>
+      <div id="technicalValues" class="technical-values hidden"></div>
+    </article>
+
+    <article class="card">
+      <h2>Histórico</h2>
+      <div id="historyList" class="history-list"></div>
+    </article>
+
+    <details class="card settings-details">
+      <summary>Dados e sincronização</summary>
+      <div class="settings-body">
+        <button id="exportBtn" class="secondary full">Exportar dados</button>
+        <label class="secondary full file-button">Importar dados<input id="importFile" type="file" accept="application/json" hidden></label>
+        <button id="resetBtn" class="danger full">Reiniciar aplicação</button>
+      </div>
+    </details>
+  </section>
+</main>
+
+<nav class="bottom-nav" aria-label="Navegação principal">
+  <button data-view="today" class="active"><span>Hoje</span></button>
+  <button data-view="analysis"><span>Analisar</span></button>
+  <button data-view="assistant"><span>Assistente</span></button>
+  <button data-view="details"><span>Piscina</span></button>
+</nav>
+<div id="toast" role="status" aria-live="polite"></div>
+<script src="storage.js"></script>
+<script src="chemistry.js"></script>
+<script src="strip-analyzer.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
