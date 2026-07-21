@@ -27,3 +27,10 @@ Copie todo o conteúdo desta pasta para a raiz do repositório GitHub Pages. Sub
 - Notificação das tarefas pendentes quando a aplicação é aberta, mediante autorização do dispositivo.
 
 Nota: notificações web no iPhone requerem normalmente a aplicação instalada no ecrã principal e autorização explícita do utilizador.
+
+
+## Forecast meteorológico em background
+
+A aplicação consulta diariamente a previsão local através da API Open-Meteo, após autorização da localização. A meteorologia não ocupa o ecrã principal. Apenas são apresentados alertas quando calor, radiação UV, chuva ou vento podem afetar a piscina.
+
+A atualização automática ocorre quando a aplicação é aberta e a informação guardada tem mais de 24 horas.
