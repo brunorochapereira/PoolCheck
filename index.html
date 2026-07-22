@@ -3,21 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#096b72">
+  <meta name="theme-color" content="#0099f7">
   <meta name="description" content="PoolCheck V3, guia passo a passo para manter a piscina pronta.">
-  <title>PoolCheck V3</title>
+  <title>PoolCheck V3.6</title>
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
 <header class="topbar">
-  <div><strong>PoolCheck</strong><span>V3</span></div>
+  <div><strong>PoolCheck</strong><span>V3.6</span></div>
   <button id="installBtn" class="ghost hidden">Instalar</button>
 </header>
 
 <main class="app-shell">
   <section id="onboarding" class="screen onboarding hidden" aria-labelledby="onboardingTitle">
-    <div class="step-indicator"><span id="onboardingProgress">1 de 5</span></div>
+    <div class="step-indicator"><span id="onboardingProgress">1 de 6</span></div>
     <div id="onboardingContent"></div>
   </section>
 
@@ -38,6 +38,12 @@
       <div class="section-head"><div><p class="eyebrow">Impacto meteorológico</p><h2 id="weatherImpactTitle">Previsão relevante</h2></div><span id="weatherImpactBadge" class="badge forecast-badge">Previsão</span></div>
       <p id="weatherImpactMessage" class="muted"></p>
       <div id="weatherImpactActions" class="action-list forecast-actions"></div>
+    </article>
+
+    <article class="card water-level-card">
+      <div class="section-head"><div><p class="eyebrow">Nível da água</p><h2>Reposição de água</h2></div><button id="openWaterTopUpBtn" class="text-button">Registar</button></div>
+      <p class="muted">Registe quando acrescentar água. O PoolCheck calcula o volume aproximado e recomenda uma nova análise, sem dosear produtos automaticamente.</p>
+      <div id="waterTopUpToday" class="water-topup-summary"></div>
     </article>
 
     <article class="card">
@@ -99,13 +105,26 @@
         <label>Nome<input id="poolName" required></label>
         <label>Tipo<select id="poolType"><option value="enterrada">Enterrada</option><option value="elevada">Elevada</option><option value="spa">Spa</option></select></label>
         <label>Volume, m³<input id="poolVolume" type="number" min="1" step="0.1" required></label>
+        <label>Área da superfície, m²<input id="poolSurfaceArea" type="number" min="1" step="0.1" placeholder="Ex.: 24"></label>
         <label>Tratamento<select id="treatmentType"><option value="cloro">Cloro</option><option value="sal">Sal</option><option value="bromo">Bromo</option></select></label>
         <label>Temperatura para maior filtração, °C<input id="highTempThreshold" type="number" min="20" max="35" step="1"></label>
-        <label>Cobertura<select id="hasCover"><option value="false">Não</option><option value="true">Sim</option></select></label>
+        <label>Tipo de cobertura<select id="coverType"><option value="none">Sem cobertura</option><option value="bubble">Manta de bolhas</option><option value="bars">Cobertura de barras</option><option value="automatic">Cobertura automática</option><option value="shelter">Abrigo</option></select></label>
+        <label>Utilização da cobertura<select id="coverUsage"><option value="usually">Quase sempre</option><option value="night">Apenas à noite</option><option value="sometimes">Às vezes</option><option value="rarely">Raramente</option></select></label>
         <button class="primary full">Guardar perfil</button>
       </form>
     </article>
 
+    <article class="card water-management-card">
+      <div class="section-head"><div><p class="eyebrow">Nível da água</p><h2>Reposições registadas</h2></div><button id="openWaterTopUpDetailsBtn" class="text-button">Adicionar</button></div>
+      <p class="muted">A reposição gera uma recomendação de medição. Não adiciona automaticamente cloro, pH+ ou pH-.</p>
+      <div id="waterTopUpHistory" class="history-list"></div>
+    </article>
+
+    <article class="card products-card">
+      <div class="section-head"><div><p class="eyebrow">Tratamento real</p><h2>Produtos disponíveis</h2></div><span id="productsCount" class="badge forecast-badge">0 ativos</span></div>
+      <p class="muted">O plano utiliza apenas os produtos que indicar aqui. Não são apresentados alertas ou sugestões de compra.</p>
+      <div id="productsList" class="products-list"></div>
+    </article>
 
     <article class="card">
       <div class="section-head"><div><p class="eyebrow">Personalização</p><h2>Manutenção</h2></div></div>
@@ -165,10 +184,44 @@
     </form>
   </div>
 </div>
+
+<div id="waterTopUpModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="waterTopUpTitle">
+  <div class="modal-backdrop" data-close-water-topup></div>
+  <div class="modal-panel">
+    <div class="section-head"><div><p class="eyebrow">Nível da água</p><h2 id="waterTopUpTitle">Registar reposição</h2></div><button class="text-button" data-close-water-topup>Fechar</button></div>
+    <form id="waterTopUpForm" class="form-grid">
+      <label>Água adicionada, cm<input id="waterTopUpCm" type="number" min="0.1" max="100" step="0.1" required placeholder="3"></label>
+      <label>Área da piscina, m²<input id="waterTopUpArea" type="number" min="1" step="0.1" required placeholder="24"></label>
+      <label class="full">Motivo<select id="waterTopUpReason">
+        <option value="evaporation">Evaporação</option>
+        <option value="backwash">Backwash ou aspiração para esgoto</option>
+        <option value="use">Utilização e salpicos</option>
+        <option value="leak">Possível fuga</option>
+        <option value="unknown">Não sei</option>
+      </select></label>
+      <div id="waterTopUpPreview" class="full water-preview">Indique os centímetros e a área para estimar a água adicionada.</div>
+      <button type="submit" class="primary full">Registar reposição</button>
+    </form>
+    <div id="waterTopUpResult" class="hidden water-result"></div>
+  </div>
+</div>
+
+<div id="productUseModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="productUseTitle">
+  <div class="modal-backdrop" data-close-product-use></div>
+  <div class="modal-panel">
+    <div class="section-head"><div><p class="eyebrow">Tratamento</p><h2 id="productUseTitle">Confirmar produto utilizado</h2></div><button class="text-button" data-close-product-use>Fechar</button></div>
+    <p id="productUseText" class="muted"></p>
+    <div class="button-stack">
+      <button id="confirmProductUse" class="primary full">Confirmar e atualizar quantidade</button>
+      <button id="skipProductUse" class="secondary full">Concluir sem descontar</button>
+    </div>
+  </div>
+</div>
 <div id="toast" role="status" aria-live="polite"></div>
 <script src="js/storage.js"></script>
 <script src="js/chemistry.js"></script>
 <script src="js/weather.js"></script>
+<script src="js/water.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>
