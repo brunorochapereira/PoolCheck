@@ -353,11 +353,13 @@
     }
   }
 
-  function advancePlanStep() {
+  function advancePlanStep(status = 'completed') {
     PoolStore.update(state => {
       const plan = state.activePlan;
       if (!plan || plan.completed) return;
-      plan.steps[plan.current].done = true;
+      plan.steps[plan.current].done = status === 'completed';
+      plan.steps[plan.current].skipped = status === 'skipped';
+      plan.steps[plan.current].status = status;
       plan.current += 1;
       if (plan.current >= plan.steps.length) plan.completed = true;
     });
@@ -468,7 +470,7 @@
       };
     }
     if ($('retestNow')) $('retestNow').onclick = () => go('analysis');
-    if ($('skipBlocked')) $('skipBlocked').onclick = advancePlanStep;
+    if ($('skipBlocked')) $('skipBlocked').onclick = () => advancePlanStep('skipped');
   }
 
   function renderProducts() {
@@ -723,11 +725,42 @@
     renderMaintenance();
     renderProducts();
     renderWaterTopUps();
+    renderIntelligence();
     if ($('notificationBtn')) {
       $('notificationBtn').textContent = PoolStore.get().notificationsEnabled ? 'Lembrete ativo' : 'Ativar lembrete';
     }
   }
 
+  function renderIntelligence() {
+    const state = PoolStore.get();
+    const analysis = latest();
+    const result = resultFor(analysis);
+    const score = PoolIntelligence.score(state, result);
+    if ($('poolScoreValue')) $('poolScoreValue').textContent = score.total;
+    if ($('poolScoreLabel')) $('poolScoreLabel').textContent = score.label;
+    if ($('poolScoreReason')) $('poolScoreReason').textContent = score.reasons?.[0] || (analysis ? 'Score calculado a partir da química, segurança, manutenção, tendência, ambiente e qualidade dos dados.' : 'Faça a primeira análise para calcular o score.');
+    if ($('poolScoreRing')) $('poolScoreRing').style.setProperty('--score', `${score.total * 3.6}deg`);
+    const labels={chemistry:'Química',safety:'Segurança',maintenance:'Manutenção',trend:'Tendência',environment:'Ambiente',data:'Dados'};
+    if ($('scoreDimensions')) $('scoreDimensions').innerHTML=Object.entries(score.dimensions).map(([k,v])=>`<div><span>${labels[k]}</span><div class="mini-track"><i style="width:${v}%"></i></div><strong>${v}</strong></div>`).join('');
+    const predictions=PoolIntelligence.predict(state);
+    if ($('predictionCard')) $('predictionCard').classList.toggle('hidden',!predictions.length);
+    if (predictions.length && $('predictionList')) {
+      const chlorine=predictions.filter(x=>x.parameter==='Cloro livre');
+      $('predictionConfidence').textContent=`Confiança ${chlorine[0]?.confidence || 'baixa'}`;
+      $('predictionList').innerHTML=chlorine.map(x=>`<div class="prediction-item"><div><strong>Dentro de ${x.day} ${x.day===1?'dia':'dias'}</strong><small>Cloro livre estimado</small></div><span>${formatNumber(x.low)}–${formatNumber(x.high)} ppm</span></div>`).join('');
+    }
+    const model=PoolIntelligence.models(state);
+    if ($('learningConfidence')) $('learningConfidence').textContent=`Confiança ${model.confidence}`;
+    if ($('learningSummary')) $('learningSummary').innerHTML=model.chlorineDecay===null?'<p class="muted">São necessárias pelo menos três sequências de medições sem adição de cloro para aprender o consumo diário.</p>':`<div class="learning-metric"><strong>${formatNumber(model.chlorineDecay,2)} ppm/dia</strong><span>Consumo médio estimado de cloro</span></div><p class="muted">Baseado em ${model.samples} intervalos válidos. O ajuste aprendido nunca ultrapassa os limites de segurança do motor químico.</p>`;
+  }
+
+  let pendingStripReading=null;
+  async function analyseStripFile(file){
+    if(!file)return;
+    $('stripReaderPanel').classList.remove('hidden');$('stripReaderStatus').textContent='A analisar a imagem…';$('applyStripReading').classList.add('hidden');
+    try{const r=await PoolStripReader.read(file);pendingStripReading=r;$('stripPreview').src=r.preview;const x=r.readings;$('stripReaderStatus').innerHTML=`<strong>Leitura experimental · confiança ${r.confidence}%</strong><br>pH ${x.ph.value} · cloro ${x.freeChlorine.value} ppm · alcalinidade ${x.alkalinity.value} ppm<br>${r.warning}`;$('applyStripReading').classList.remove('hidden');}
+    catch(e){$('stripReaderStatus').textContent='Não foi possível analisar a fotografia. Introduza os valores manualmente.';}
+  }
   function openAnalysis(photo) {
     $('analysisFormCard').classList.remove('hidden');
     $('photoField').classList.toggle('hidden', !photo);
@@ -782,6 +815,8 @@
   };
 
   $('photoAnalysisBtn').onclick = () => openAnalysis(true);
+  if ($('stripPhoto')) $('stripPhoto').onchange = event => analyseStripFile(event.target.files?.[0]);
+  if ($('applyStripReading')) $('applyStripReading').onclick = () => {if(!pendingStripReading)return;const r=pendingStripReading.readings;$('ph').value=r.ph.value;$('freeChlorine').value=r.freeChlorine.value;$('alkalinity').value=r.alkalinity.value;toast('Valores aplicados. Confirme-os visualmente antes de guardar.');};
   $('manualAnalysisBtn').onclick = () => openAnalysis(false);
   $('closeAnalysisForm').onclick = () => $('analysisFormCard').classList.add('hidden');
 
@@ -964,6 +999,15 @@
       }
     };
   }
+
+  if ($('aiForm')) $('aiForm').onsubmit = event => {
+    event.preventDefault();
+    const question=$('aiQuestion').value.trim();if(!question)return;
+    const state=PoolStore.get();const answer=PoolIntelligence.answer(question,state,resultFor(latest()));
+    state.assistantHistory.unshift({date:new Date().toISOString(),question,answer});PoolStore.update(()=>{});
+    $('aiConversation').innerHTML=`<div class="chat user">${escapeHtml(question)}</div><div class="chat assistant">${escapeHtml(answer)}</div>`;
+    $('aiQuestion').value='';
+  };
 
   window.addEventListener('beforeinstallprompt', event => {
     event.preventDefault();

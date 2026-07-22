@@ -1,9 +1,24 @@
 {
-  "name": "PoolCheck V3.6",
+  "name": "PoolCheck V4",
   "short_name": "PoolCheck",
+  "description": "Assistente inteligente para manutenção e análise da piscina.",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#f4fbff",
   "theme_color": "#0099f7",
-  "icons": []
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
 }

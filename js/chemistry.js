@@ -68,7 +68,7 @@ const PoolChemistry=(()=>{
    const d=alkalinityDose(volume,a.alkalinity,80);
    const amountKg=d.grams/1000;
    let action;
-   if(enough(products,'alkalinityPlus',amountKg))action=productStep('alkalinityPlus',amountKg,'kg',`Adicione aproximadamente ${d.grams} g de incrementador de alcalinidade para aumentar cerca de ${d.appliedDelta} ppm. Mantenha a filtração ligada e repita a análise após 6 horas.${d.staged?' A correção total foi dividida em etapas.':''}`,{waitHours:6,retest:true,staged:d.staged});
+   if(enough(products,'alkalinityPlus',amountKg))action=productStep('alkalinityPlus',amountKg,'kg',`Adicione aproximadamente ${d.grams} g de incrementador de alcalinidade para aumentar cerca de ${d.appliedDelta} ppm. Confirme no rótulo a dosagem de referência do produto. Mantenha a filtração ligada e repita a análise após 6 horas.${d.staged?' A correção total foi dividida em etapas.':''}`,{waitHours:6,retest:true,staged:d.staged});
    else if(available(products,'alkalinityPlus'))action={instruction:`A quantidade disponível de incrementador de alcalinidade (${qty(products,'alkalinityPlus').toLocaleString('pt-PT')} kg) é inferior aos ${amountKg.toLocaleString('pt-PT')} kg calculados para esta etapa. Não aplique uma dose parcial sem recalcular.`,blocked:true,retest:true};
    else action={instruction:'Não existe incrementador de alcalinidade disponível. Esta correção fica pendente.',blocked:true,retest:true};
    issues.push({key:'alk-low',severity:2,title:'Aumentar a alcalinidade',reason:'A alcalinidade está abaixo de 80 ppm e pode tornar o pH instável.',...action});
@@ -81,7 +81,7 @@ const PoolChemistry=(()=>{
    const amountKg=d.grams/1000;
    let action;
    if(lowAlk)action={instruction:'A alcalinidade está baixa. Corrija primeiro a alcalinidade e volte a medir o pH antes de adicionar pH+.',blocked:true,retest:true,noSwim:a.ph<7};
-   else if(enough(products,'phPlus',amountKg))action=productStep('phPlus',amountKg,'kg',`Adicione aproximadamente ${d.grams} g de pH+ para aumentar no máximo ${d.appliedDelta.toLocaleString('pt-PT')} unidades nesta etapa. Distribua diretamente por vários pontos da piscina com a filtração ligada, sem misturar com outros produtos, e repita a análise após 2 a 3 horas.${d.staged?' Não tente atingir o valor final numa única aplicação.':''}`,{waitHours:3,retest:true,staged:d.staged,noSwim:a.ph<7});
+   else if(enough(products,'phPlus',amountKg))action=productStep('phPlus',amountKg,'kg',`Adicione aproximadamente ${d.grams} g de pH+ para aumentar no máximo ${d.appliedDelta.toLocaleString('pt-PT')} unidades nesta etapa. Confirme no rótulo a dosagem de referência do produto. Distribua diretamente por vários pontos da piscina com a filtração ligada, sem misturar com outros produtos, e repita a análise após 2 a 3 horas.${d.staged?' Não tente atingir o valor final numa única aplicação.':''}`,{waitHours:3,retest:true,staged:d.staged,noSwim:a.ph<7});
    else if(available(products,'phPlus'))action={instruction:`A quantidade disponível de pH+ (${qty(products,'phPlus').toLocaleString('pt-PT')} kg) é inferior aos ${amountKg.toLocaleString('pt-PT')} kg calculados para esta etapa. Não aplique uma dose parcial sem recalcular.`,blocked:true,retest:true,noSwim:a.ph<7};
    else action={instruction:'Não existe pH+ disponível. Esta correção não pode ser executada com os produtos configurados.',blocked:true,retest:true,noSwim:a.ph<7};
    issues.push({key:'ph-low',severity:a.ph<6.8?3:2,title:'Aumentar o pH',reason:'O pH está abaixo do intervalo operacional de 7,2 a 7,6.',...action});
@@ -90,7 +90,7 @@ const PoolChemistry=(()=>{
    const d=phDose(volume,a.ph,7.6,false);
    const amountKg=d.grams/1000;
    let action;
-   if(enough(products,'phMinus',amountKg))action=productStep('phMinus',amountKg,'kg',`Adicione aproximadamente ${d.grams} g de pH- para reduzir no máximo ${d.appliedDelta.toLocaleString('pt-PT')} unidades nesta etapa. Distribua diretamente por vários pontos da piscina com a filtração ligada, sem misturar com outros produtos, e repita a análise após 2 a 3 horas.${d.staged?' Não tente atingir o valor final numa única aplicação.':''}`,{waitHours:3,retest:true,staged:d.staged,noSwim:a.ph>8});
+   if(enough(products,'phMinus',amountKg))action=productStep('phMinus',amountKg,'kg',`Adicione aproximadamente ${d.grams} g de pH- para reduzir no máximo ${d.appliedDelta.toLocaleString('pt-PT')} unidades nesta etapa. Confirme no rótulo a dosagem de referência do produto. Distribua diretamente por vários pontos da piscina com a filtração ligada, sem misturar com outros produtos, e repita a análise após 2 a 3 horas.${d.staged?' Não tente atingir o valor final numa única aplicação.':''}`,{waitHours:3,retest:true,staged:d.staged,noSwim:a.ph>8});
    else if(available(products,'phMinus'))action={instruction:`A quantidade disponível de pH- (${qty(products,'phMinus').toLocaleString('pt-PT')} kg) é inferior aos ${amountKg.toLocaleString('pt-PT')} kg calculados para esta etapa. Não aplique uma dose parcial sem recalcular.`,blocked:true,retest:true,noSwim:a.ph>8};
    else action={instruction:'Não existe pH- disponível. Esta correção não pode ser executada com os produtos configurados.',blocked:true,retest:true,noSwim:a.ph>8};
    issues.push({key:'ph-high',severity:a.ph>8?3:2,title:'Reduzir o pH',reason:'O pH está acima do intervalo operacional de 7,2 a 7,6.',...action});
@@ -114,15 +114,18 @@ const PoolChemistry=(()=>{
   const temp=Number(a.waterTemp)||0;
   if(temp>=Number(pool.highTempThreshold||28))issues.push({key:'filtration',severity:1,title:'Reforçar circulação e controlo',reason:'Água quente acelera o consumo de desinfetante e o crescimento microbiológico.',instruction:`Aumente a filtração relativamente à rotina normal e confirme o cloro mais frequentemente. O número exato de horas depende do caudal da bomba e do volume da piscina.${pool.coverType==='bubble'?' Retire a manta durante parte do período mais quente se a água estiver a sobreaquecer.':''}`,waitHours:0,retest:false});
 
-  issues.sort((x,y)=>y.severity-x.severity);
+  const dependencyRank={
+   'ph-confirm':0,'alk-low':10,'ph-low':20,'ph-high':20,'chlorine-low':30,'chlorine-high':30,'combined-chlorine':35,'alk-high':40,'heat':50
+  };
+  issues.sort((x,y)=>(dependencyRank[x.key]??100)-(dependencyRank[y.key]??100)||y.severity-x.severity);
   const urgent=issues.some(i=>i.severity===3);
   const status=urgent?'bad':issues.length?'warn':'good';
   return{status,label:status==='good'?'Boa':status==='warn'?'Requer atenção':'Crítica',message:status==='good'?'A água está dentro dos intervalos definidos.':urgent?'Conclua primeiro os passos seguros e repita a análise antes de utilizar a piscina.':'Existem correções graduais a realizar.',issues:issues.slice(0,3),allIssues:issues};
  }
 
  function planFrom(result){
-  if(!result.allIssues.length)return{createdAt:new Date().toISOString(),current:0,completed:false,steps:[{title:'Manter a rotina',reason:'A água está equilibrada.',instruction:'Não é necessário adicionar produtos. Faça uma nova análise dentro de 7 dias ou após chuva intensa/utilização elevada.',waitHours:0,retest:false}]};
-  return{createdAt:new Date().toISOString(),current:0,completed:false,steps:result.allIssues.map((i,idx)=>({...i,order:idx+1,done:false}))};
+  if(!result.allIssues.length)return{createdAt:new Date().toISOString(),current:0,completed:false,steps:[{status:'pending',done:false,skipped:false,title:'Manter a rotina',reason:'A água está equilibrada.',instruction:'Não é necessário adicionar produtos. Faça uma nova análise dentro de 7 dias ou após chuva intensa/utilização elevada.',waitHours:0,retest:false}]};
+  return{createdAt:new Date().toISOString(),current:0,completed:false,steps:result.allIssues.map((i,idx)=>({...i,order:idx+1,done:false,skipped:false,status:i.blocked?'blocked':'pending'}))};
  }
  return{analyse,planFrom,reference:REF,_test:{phDose,alkalinityDose,chooseChlorine}};
 })();
