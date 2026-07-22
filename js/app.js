@@ -361,7 +361,12 @@
       plan.steps[plan.current].skipped = status === 'skipped';
       plan.steps[plan.current].status = status;
       plan.current += 1;
-      if (plan.current >= plan.steps.length) plan.completed = true;
+      if (plan.current >= plan.steps.length) {
+        plan.completed = true;
+        const completedWithRisks = plan.steps.some(step => step.skipped === true && Number(step.severity) >= 2);
+        plan.status = completedWithRisks ? 'concluido_com_riscos' : 'concluido';
+        state.lastCompletedPlan = JSON.parse(JSON.stringify(plan));
+      }
     });
     renderAll();
     renderAssistant();
@@ -725,7 +730,7 @@
     renderMaintenance();
     renderProducts();
     renderWaterTopUps();
-    renderIntelligence();
+    try { renderIntelligence(); } catch (error) { console.error('Módulo de inteligência indisponível', error); if ($('poolScoreReason')) $('poolScoreReason').textContent='Inteligência temporariamente indisponível. As funções principais continuam operacionais.'; if ($('predictionCard')) $('predictionCard').classList.add('hidden'); }
     if ($('notificationBtn')) {
       $('notificationBtn').textContent = PoolStore.get().notificationsEnabled ? 'Lembrete ativo' : 'Ativar lembrete';
     }
@@ -735,6 +740,7 @@
     const state = PoolStore.get();
     const analysis = latest();
     const result = resultFor(analysis);
+    if (typeof PoolIntelligence === 'undefined') throw new Error('PoolIntelligence não carregado');
     const score = PoolIntelligence.score(state, result);
     if ($('poolScoreValue')) $('poolScoreValue').textContent = score.total;
     if ($('poolScoreLabel')) $('poolScoreLabel').textContent = score.label;
@@ -758,7 +764,7 @@
   async function analyseStripFile(file){
     if(!file)return;
     $('stripReaderPanel').classList.remove('hidden');$('stripReaderStatus').textContent='A analisar a imagem…';$('applyStripReading').classList.add('hidden');
-    try{const r=await PoolStripReader.read(file);pendingStripReading=r;$('stripPreview').src=r.preview;const x=r.readings;$('stripReaderStatus').innerHTML=`<strong>Leitura experimental · confiança ${r.confidence}%</strong><br>pH ${x.ph.value} · cloro ${x.freeChlorine.value} ppm · alcalinidade ${x.alkalinity.value} ppm<br>${r.warning}`;$('applyStripReading').classList.remove('hidden');}
+    try{if(typeof PoolStripReader==='undefined')throw new Error('Leitor não carregado');const r=await PoolStripReader.read(file);pendingStripReading=r;$('stripPreview').src=r.preview;const x=r.readings;$('stripReaderStatus').innerHTML=`<strong>Leitura experimental · confiança ${r.confidence}%</strong><br>pH ${x.ph.value} · cloro ${x.freeChlorine.value} ppm · alcalinidade ${x.alkalinity.value} ppm<br>${r.warning}`;$('applyStripReading').classList.remove('hidden');}
     catch(e){$('stripReaderStatus').textContent='Não foi possível analisar a fotografia. Introduza os valores manualmente.';}
   }
   function openAnalysis(photo) {
@@ -816,7 +822,7 @@
 
   $('photoAnalysisBtn').onclick = () => openAnalysis(true);
   if ($('stripPhoto')) $('stripPhoto').onchange = event => analyseStripFile(event.target.files?.[0]);
-  if ($('applyStripReading')) $('applyStripReading').onclick = () => {if(!pendingStripReading)return;const r=pendingStripReading.readings;$('ph').value=r.ph.value;$('freeChlorine').value=r.freeChlorine.value;$('alkalinity').value=r.alkalinity.value;toast('Valores aplicados. Confirme-os visualmente antes de guardar.');};
+  if ($('applyStripReading')) $('applyStripReading').onclick = () => {if(!pendingStripReading)return;const r=pendingStripReading.readings;[['ph','ph'],['freeChlorine','freeChlorine'],['alkalinity','alkalinity']].forEach(([field,key])=>{if(r[key]?.confidence>=85)$(field).value=r[key].value;});toast('Foram aplicados apenas os campos com confiança igual ou superior a 85%. Confirme todos os valores antes de guardar.');};
   $('manualAnalysisBtn').onclick = () => openAnalysis(false);
   $('closeAnalysisForm').onclick = () => $('analysisFormCard').classList.add('hidden');
 
@@ -834,11 +840,26 @@
       hardness: $('hardness').value ? Number($('hardness').value) : null,
       notes: $('analysisNotes').value
     };
-    const result = PoolChemistry.analyse(analysis, PoolStore.get().pool, PoolStore.get().products);
+    analysis.source = pendingStripReading ? 'foto' : 'manual';
+    analysis.confidence = pendingStripReading ? Number(pendingStripReading.confidence || 0) : 100;
+    analysis.engineVersion = PoolChemistry.ENGINE_VERSION;
+    const currentState = PoolStore.get();
+    const result = PoolChemistry.analyse(analysis, currentState.pool, currentState.products, currentState.featureFlags || {});
+    if (result.label === 'Leitura inválida') {
+      toast(result.message || 'Leitura inválida. Repita a medição.');
+      return;
+    }
+    const newPlan = PoolChemistry.planFrom(result);
     PoolStore.update(state => {
+      if (state.activePlan && !state.activePlan.completed) {
+        state.activePlan.status = 'arquivado';
+        state.plans = state.plans || [];
+        state.plans.unshift(JSON.parse(JSON.stringify(state.activePlan)));
+      }
       state.analyses.unshift(analysis);
-      state.activePlan = PoolChemistry.planFrom(result);
+      state.activePlan = newPlan;
     });
+    pendingStripReading = null;
     event.target.reset();
     $('analysisFormCard').classList.add('hidden');
     renderAll();
@@ -891,7 +912,7 @@
     const blob = new Blob([PoolStore.export()], { type: 'application/json' });
     const anchor = document.createElement('a');
     anchor.href = URL.createObjectURL(blob);
-    anchor.download = 'poolcheck-v3-dados.json';
+    anchor.download = 'poolcheck-v5-dados.json';
     anchor.click();
     URL.revokeObjectURL(anchor.href);
   };
@@ -1003,7 +1024,7 @@
   if ($('aiForm')) $('aiForm').onsubmit = event => {
     event.preventDefault();
     const question=$('aiQuestion').value.trim();if(!question)return;
-    const state=PoolStore.get();const answer=PoolIntelligence.answer(question,state,resultFor(latest()));
+    const state=PoolStore.get();const answer=typeof PoolIntelligence!=='undefined'?PoolIntelligence.answer(question,state,resultFor(latest())):'O assistente local está temporariamente indisponível. O plano químico continua operacional.';
     state.assistantHistory.unshift({date:new Date().toISOString(),question,answer});PoolStore.update(()=>{});
     $('aiConversation').innerHTML=`<div class="chat user">${escapeHtml(question)}</div><div class="chat assistant">${escapeHtml(answer)}</div>`;
     $('aiQuestion').value='';
@@ -1024,6 +1045,26 @@
 
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 
+
+  function invalidateLegacyPlanIfNeeded() {
+    const state = PoolStore.get();
+    const plan = state.activePlan;
+    if (!plan || !plan.engineVersion || typeof PoolChemistry === 'undefined') return;
+    const oldMajor = Number(String(plan.engineVersion).split('.')[0]);
+    const newMajor = Number(String(PoolChemistry.ENGINE_VERSION).split('.')[0]);
+    if (Number.isFinite(oldMajor) && oldMajor < newMajor && !plan.completed) {
+      PoolStore.update(draft => {
+        draft.activePlan.status = 'cancelado';
+        draft.activePlan.completed = true;
+        draft.plans = draft.plans || [];
+        draft.plans.unshift(JSON.parse(JSON.stringify(draft.activePlan)));
+        draft.activePlan = null;
+      });
+      window.setTimeout(() => toast('As regras químicas foram atualizadas. Repita a análise para gerar um novo plano.'), 150);
+    }
+  }
+
+  invalidateLegacyPlanIfNeeded();
   refreshWeatherInBackground();
   checkMaintenanceNotification();
 

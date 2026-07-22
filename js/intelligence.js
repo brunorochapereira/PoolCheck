@@ -2,7 +2,7 @@ const PoolIntelligence=(()=>{
  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
  const hours=(a,b)=>(new Date(b)-new Date(a))/36e5;
  function models(state){
-  const analyses=[...(state.analyses||[])].sort((a,b)=>new Date(a.date)-new Date(b.date));
+  const analyses=[...(state.analyses||[])].filter(a=>!(a.source==='foto'&&Number(a.confidence)<85)).sort((a,b)=>new Date(a.date)-new Date(b.date));
   const products=state.productHistory||[];
   const result={chlorineDecay:null,phTrend:null,alkTrend:null,confidence:'Baixa',samples:0};
   const diffs=[];

@@ -4,14 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0099f7">
-  <meta name="description" content="PoolCheck V3, guia passo a passo para manter a piscina pronta.">
-  <title>PoolCheck V3.6</title>
+  <meta name="description" content="PoolCheck V5, assistente inteligente para passo a passo para manter a piscina pronta.">
+  <title>PoolCheck V5</title>
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
 <header class="topbar">
-  <div><strong>PoolCheck</strong><span>V3.6</span></div>
+  <div><strong>PoolCheck</strong><span>V5.0</span></div>
   <button id="installBtn" class="ghost hidden">Instalar</button>
 </header>
 
@@ -26,6 +26,17 @@
       <p class="eyebrow">Estado da piscina</p>
       <div class="status-line"><span id="statusDot" class="status-dot"></span><h1 id="todayTitle">Sem análise</h1></div>
       <p id="statusMessage">Faça a primeira análise para saber se a piscina está pronta.</p>
+    </article>
+
+    <article class="card intelligence-card">
+      <div class="score-layout"><div class="score-ring" id="poolScoreRing"><strong id="poolScoreValue">0</strong><span>/100</span></div><div><p class="eyebrow">Saúde da piscina</p><h2 id="poolScoreLabel">Sem dados</h2><p id="poolScoreReason" class="muted">Faça a primeira análise para calcular o score.</p></div></div>
+      <div id="scoreDimensions" class="score-dimensions"></div>
+    </article>
+
+    <article id="predictionCard" class="card hidden">
+      <div class="section-head"><div><p class="eyebrow">Previsão química</p><h2>Próximos dias</h2></div><span id="predictionConfidence" class="badge">Estimativa</span></div>
+      <div id="predictionList" class="prediction-list"></div>
+      <p class="muted safety-note">As previsões não substituem uma medição e nunca geram dosagem automática.</p>
     </article>
 
     <article class="card">
@@ -62,7 +73,7 @@
     <div class="page-title"><p class="eyebrow">Nova análise</p><h1 id="analysisTitle">Como quer analisar?</h1><p>Escolha a opção mais simples para si.</p></div>
     <div class="choice-grid">
       <button id="photoAnalysisBtn" class="choice-card">
-        <span class="choice-number">1</span><strong>Fotografar tira</strong><small>Use a câmara para guardar a fotografia e introduzir os valores lidos.</small>
+        <span class="choice-number">1</span><strong>Fotografar tira</strong><small>Leitura automática experimental com confirmação obrigatória.</small>
       </button>
       <button id="manualAnalysisBtn" class="choice-card">
         <span class="choice-number">2</span><strong>Introduzir valores</strong><small>Registe manualmente os resultados da tira ou do equipamento.</small>
@@ -71,6 +82,7 @@
 
     <article id="analysisFormCard" class="card hidden">
       <div class="section-head"><div><p class="eyebrow">Valores da água</p><h2>Registar análise</h2></div><button id="closeAnalysisForm" class="text-button">Fechar</button></div>
+      <div id="stripReaderPanel" class="strip-reader hidden"><img id="stripPreview" alt="Pré-visualização da tira"><div id="stripReaderStatus" class="muted"></div><button id="applyStripReading" type="button" class="secondary full hidden">Aplicar valores detetados</button></div>
       <form id="analysisForm" class="form-grid">
         <label class="full file-field hidden" id="photoField">Fotografia da tira<input id="stripPhoto" type="file" accept="image/*" capture="environment"></label>
         <label>pH<input id="ph" type="number" min="5" max="10" step="0.1" required placeholder="7,2"></label>
@@ -93,6 +105,7 @@
   <section id="assistant" class="screen" aria-labelledby="assistantTitle">
     <div class="page-title"><p class="eyebrow">Assistente</p><h1 id="assistantTitle">Próximo passo</h1><p id="assistantIntro">Faça uma análise para criar um plano.</p></div>
     <article id="planCard" class="card plan-card"></article>
+    <article class="card ai-assistant-card"><div class="section-head"><div><p class="eyebrow">IA local</p><h2>Perguntar ao PoolCheck</h2></div></div><div id="aiConversation" class="ai-conversation"><p class="muted">Pergunte, por exemplo: “Posso usar a piscina?”, “Porque não corrigir já o pH?” ou “Como estará o cloro em três dias?”.</p></div><form id="aiForm" class="ai-form"><input id="aiQuestion" placeholder="Escreva a sua pergunta" required><button class="primary" type="submit">Perguntar</button></form><p class="muted safety-note">A IA explica os dados. O motor químico mantém o controlo das dosagens e regras de segurança.</p></article>
   </section>
 
   <section id="details" class="screen" aria-labelledby="detailsTitle">
@@ -145,6 +158,8 @@
       <div class="section-head"><h2>Últimos valores</h2><button id="toggleTechnical" class="text-button">Mostrar</button></div>
       <div id="technicalValues" class="technical-values hidden"></div>
     </article>
+
+    <article class="card"><div class="section-head"><div><p class="eyebrow">Aprendizagem automática</p><h2>Modelo da sua piscina</h2></div><span id="learningConfidence" class="badge">Sem dados</span></div><div id="learningSummary" class="learning-summary"></div></article>
 
     <article class="card">
       <h2>Histórico</h2>
@@ -218,10 +233,12 @@
   </div>
 </div>
 <div id="toast" role="status" aria-live="polite"></div>
-<script src="js/storage.js?v=3.7.0"></script>
-<script src="js/chemistry.js?v=3.7.0"></script>
-<script src="js/weather.js?v=3.7.0"></script>
-<script src="js/water.js?v=3.7.0"></script>
-<script src="js/app.js?v=3.7.0"></script>
+<script src="js/storage.js?v=5.0.0"></script>
+<script src="js/chemistry.js?v=5.0.0"></script>
+<script src="js/weather.js?v=5.0.0"></script>
+<script src="js/water.js?v=5.0.0"></script>
+<script src="js/intelligence.js?v=5.0.0"></script>
+<script src="js/vision.js?v=5.0.0"></script>
+<script src="js/app.js?v=5.0.0"></script>
 </body>
 </html>

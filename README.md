@@ -1,11 +1,36 @@
-# PoolCheck V4
+# PoolCheck V5
 
-Versão final sem módulo Market. Inclui motor químico com dependências, migração de dados, estados concluído/ignorado, aprendizagem automática local, previsão química baseada no histórico, assistente de IA local, leitura automática experimental de tira, score complexo, produtos disponíveis, manutenção configurável, meteorologia em background e reposição de água.
+Aplicação PWA para acompanhamento da química, manutenção e histórico de uma piscina.
 
-## Instalação no GitHub Pages
+## Versões
 
-Copie todo o conteúdo deste ZIP para a raiz do repositório. Não mantenha ficheiros antigos duplicados. Após publicar, abra a aplicação uma vez com ligação à internet para atualizar o Service Worker.
+- Aplicação: 5.0.0
+- Dados: 5
+- Motor químico: 5.0.0
 
-## Segurança
+## Alterações principais
 
-As previsões e a leitura de tira são estimativas. Exigem confirmação por medição. A IA explica dados, mas não controla fórmulas, dosagens ou estados do tratamento.
+- Persistência corrigida: arrays de histórico são preservados em atualizações e migrações.
+- Análise e plano gravados de forma atómica.
+- Planos anteriores são arquivados quando uma nova análise é criada.
+- Módulos de inteligência e visão não podem bloquear os fluxos essenciais.
+- Dependência simétrica: alcalinidade inferior a 80 ppm bloqueia pH+ e pH-.
+- Validação de CYA, cloro total, dureza e temperatura.
+- Tabela conservadora CYA/cloro.
+- Versionamento independente do motor químico.
+- Fator tampão de pH implementado, mas desativado em produção por omissão.
+- Leitura de tira exige confirmação e exclui leituras abaixo de 85% da aprendizagem.
+
+## Limitações de produção
+
+A tabela CYA/cloro, o fator tampão de pH e o classificador de imagem requerem validação técnica/calibração antes de ativação comercial plena.
+
+## Testes
+
+Execute:
+
+```bash
+node test-v5.js
+node test-chemistry.js
+node test-water.js
+```
