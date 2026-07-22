@@ -325,7 +325,8 @@
     const card = $('statusCard');
     card.className = `status-card ${result?.status || 'neutral'}`;
     $('todayTitle').textContent = result?.label || 'Sem análise';
-    $('statusMessage').textContent = result?.message || 'Faça a primeira análise para saber se a piscina está pronta.';
+    const systemWarning = (PoolStore.get().systemWarnings || []).find(item => item?.type === 'invalid-plan');
+    $('statusMessage').textContent = systemWarning?.message || result?.message || 'Faça a primeira análise para saber se a piscina está pronta.';
     $('todayActions').innerHTML = actionHTML(result?.issues || []);
     $('urgentBadge').classList.toggle('hidden', !result?.allIssues.some(item => item.severity === 3));
 
@@ -849,7 +850,7 @@
       toast(result.message || 'Leitura inválida. Repita a medição.');
       return;
     }
-    const newPlan = PoolChemistry.planFrom(result);
+    const newPlan = PoolChemistry.planFrom(result, analysis.id);
     PoolStore.update(state => {
       if (state.activePlan && !state.activePlan.completed) {
         state.activePlan.status = 'arquivado';

@@ -4,5 +4,10 @@ const ctx={console,localStorage,JSON,Date,Math};vm.createContext(ctx);vm.runInCo
 const S=ctx.store;
 S.update(s=>{s.analyses.unshift({id:'a1'});s.waterTopUps.unshift({id:'w1'});s.productHistory.unshift({id:'p1'});s.assistantHistory.unshift({id:'h1'});s.learning.observations.unshift({id:'o1'});s.predictions.items.unshift({id:'pr1'});});
 const x=S.get();assert.equal(x.analyses.length,1);assert.equal(x.waterTopUps.length,1);assert.equal(x.productHistory.length,1);assert.equal(x.assistantHistory.length,1);assert.equal(x.learning.observations.length,1);assert.equal(x.predictions.items.length,1);
-const exported=JSON.parse(S.export());assert.equal(exported.dataVersion,5);assert.equal(exported.appVersion,'5.0.0');
+const exported=JSON.parse(S.export());assert.equal(exported.dataVersion,5);assert.equal(exported.appVersion,'5.0.0-rc.2');
 console.log('PoolCheck V5: persistência de arrays aprovada.');
+
+assert.throws(()=>S.replace({dataVersion:5,analyses:[],activePlan:{analysisId:'missing',engineVersion:'6.0.0',createdAt:new Date().toISOString(),steps:[{}]}}),/não está associado/);
+S.replace({dataVersion:5,analyses:[{id:'a2',date:'2026-07-22T00:00:00.000Z',engineVersion:'6.0.0'}],activePlan:{analysisId:'a2',engineVersion:'6.0.0',createdAt:'2026-07-22T00:00:01.000Z',steps:[{title:'x'}]}});
+assert.equal(S.get().activePlan.analysisId,'a2');
+assert.throws(()=>S.replace({dataVersion:5,analyses:[],products:'abc'}),/products/);

@@ -1,6 +1,6 @@
-const APP_VERSION='5.0.0';
+const APP_VERSION='5.0.0-rc.2';
 const CACHE=`poolcheck-v${APP_VERSION}`;
-const ASSETS=['./','./index.html','./manifest.json','./css/styles.css','./js/storage.js?v=5.0.0','./js/chemistry.js?v=5.0.0','./js/weather.js?v=5.0.0','./js/water.js?v=5.0.0','./js/intelligence.js?v=5.0.0','./js/vision.js?v=5.0.0','./js/app.js?v=5.0.0','./icons/icon-192.png','./icons/icon-512.png'];
+const ASSETS=['./','./index.html','./manifest.json','./css/styles.css','./js/storage.js?v=5.0.0-rc.2','./js/chemistry.js?v=5.0.0-rc.2','./js/weather.js?v=5.0.0-rc.2','./js/water.js?v=5.0.0-rc.2','./js/intelligence.js?v=5.0.0-rc.2','./js/vision.js?v=5.0.0-rc.2','./js/app.js?v=5.0.0-rc.2','./icons/icon-192.png','./icons/icon-512.png'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',e=>{

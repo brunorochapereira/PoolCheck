@@ -4,9 +4,9 @@ Aplicação PWA para acompanhamento da química, manutenção e histórico de um
 
 ## Versões
 
-- Aplicação: 5.0.0
+- Aplicação: 5.0.0-rc.2
 - Dados: 5
-- Motor químico: 5.0.0
+- Motor químico: 6.0.0
 
 ## Alterações principais
 
@@ -20,6 +20,10 @@ Aplicação PWA para acompanhamento da química, manutenção e histórico de um
 - Versionamento independente do motor químico.
 - Fator tampão de pH implementado, mas desativado em produção por omissão.
 - Leitura de tira exige confirmação e exclui leituras abaixo de 85% da aprendizagem.
+- RC2: planos ativos exigem ligação válida por `analysisId` à análise de origem.
+- RC2: importações rejeitam planos órfãos, produtos inválidos e datas de análise inválidas.
+- RC2: CYA crítico é priorizado antes de recomendações informativas.
+- RC2: ordenação usa `noSwim`, `blocked` e severidade como critérios de segurança secundários.
 
 ## Limitações de produção
 
@@ -33,4 +37,5 @@ Execute:
 node test-v5.js
 node test-chemistry.js
 node test-water.js
+node test-storage.js
 ```

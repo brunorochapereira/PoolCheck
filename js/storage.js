@@ -1,5 +1,5 @@
 const PoolStore=(()=>{
- const APP_VERSION='5.0.0';
+ const APP_VERSION='5.0.0-rc.2';
  const DATA_VERSION=5;
  const KEY='poolcheck-v5';
  const LEGACY_KEYS=['poolcheck-v4','poolcheck-v3','poolcheck_state_v3','poolcheck_state_v2'];
@@ -24,7 +24,7 @@ const PoolStore=(()=>{
   {id:'robot',title:'Aspirar com o robô',lastDone:null,enabled:true,intervalValue:2,intervalUnit:'days',intervalDays:2},
   {id:'cover-clean',title:'Limpar e verificar a manta',lastDone:null,enabled:true,intervalValue:2,intervalUnit:'weeks',intervalDays:14}
  ];
- const defaults={dataVersion:DATA_VERSION,appVersion:APP_VERSION,onboardingComplete:false,featureFlags:{phBufferAdjustmentEnabled:false,stripReaderEnabled:true},pool:{name:'Piscina principal',type:'enterrada',volume:36,surfaceArea:null,treatment:'cloro',hasCover:true,coverType:'bubble',coverUsage:'usually',highTempThreshold:28,filterType:'sand',sunExposure:'full',treesNearby:false,windExposure:'normal'},products:productDefaults,productHistory:[],waterTopUps:[],weather:{enabled:true,autoTasks:true,latitude:null,longitude:null,temperature:null,updatedAt:null,timezone:null,daily:[],impact:null},maintenance:taskDefaults,notificationsEnabled:false,lastMaintenanceNotification:null,analyses:[],plans:[],activePlan:null,lastCompletedPlan:null,learning:{enabled:true,models:{},observations:[],minimumSamples:3},predictions:{lastRun:null,items:[]},assistantHistory:[],stripReader:{model:'generic-6',lastConfidence:null}};
+ const defaults={dataVersion:DATA_VERSION,appVersion:APP_VERSION,onboardingComplete:false,featureFlags:{phBufferAdjustmentEnabled:false,stripReaderEnabled:true},pool:{name:'Piscina principal',type:'enterrada',volume:36,surfaceArea:null,treatment:'cloro',hasCover:true,coverType:'bubble',coverUsage:'usually',highTempThreshold:28,filterType:'sand',sunExposure:'full',treesNearby:false,windExposure:'normal'},products:productDefaults,productHistory:[],waterTopUps:[],weather:{enabled:true,autoTasks:true,latitude:null,longitude:null,temperature:null,updatedAt:null,timezone:null,daily:[],impact:null},maintenance:taskDefaults,notificationsEnabled:false,lastMaintenanceNotification:null,analyses:[],plans:[],activePlan:null,lastCompletedPlan:null,learning:{enabled:true,models:{},observations:[],minimumSamples:3},predictions:{lastRun:null,items:[]},assistantHistory:[],systemWarnings:[],stripReader:{model:'generic-6',lastConfidence:null}};
  const clone=o=>JSON.parse(JSON.stringify(o));
  function mergeObject(base,extra){
   for(const [k,v] of Object.entries(extra||{})){
@@ -35,23 +35,54 @@ const PoolStore=(()=>{
   return base;
  }
  function reconcileById(defaultItems,oldItems){const map=new Map((oldItems||[]).map(x=>[x.id,x]));return defaultItems.map(d=>mergeObject(clone(d),map.get(d.id)||{})).concat((oldItems||[]).filter(x=>!defaultItems.some(d=>d.id===x.id)).map(clone));}
+ function isPlainObject(value){return Boolean(value)&&typeof value==='object'&&!Array.isArray(value);}
+ function validDate(value){if(value==null||value==='')return true;const time=Date.parse(value);return Number.isFinite(time);}
+ function planAnalysis(plan,analyses){
+  if(!isPlainObject(plan)||!Array.isArray(analyses)||!plan.analysisId)return null;
+  return analyses.find(item=>isPlainObject(item)&&item.id===plan.analysisId)||null;
+ }
+ function activePlanIsCoherent(plan,analyses){
+  const analysis=planAnalysis(plan,analyses);
+  if(!analysis||!Array.isArray(plan.steps)||plan.steps.length===0||!plan.engineVersion)return false;
+  if(analysis.engineVersion&&analysis.engineVersion!==plan.engineVersion)return false;
+  if(!validDate(plan.createdAt)||!validDate(analysis.date))return false;
+  if(plan.createdAt&&analysis.date&&Date.parse(plan.createdAt)<Date.parse(analysis.date))return false;
+  return true;
+ }
+ function addWarning(next,type,message){
+  if(!Array.isArray(next.systemWarnings))next.systemWarnings=[];
+  if(!next.systemWarnings.some(item=>item&&item.type===type))next.systemWarnings.unshift({type,message,date:new Date().toISOString()});
+ }
  function migrate(raw){
-  const next=mergeObject(clone(defaults),raw||{});
-  next.products=mergeObject(clone(productDefaults),raw?.products||{});
-  next.maintenance=reconcileById(taskDefaults,raw?.maintenance||[]);
-  ['analyses','plans','productHistory','waterTopUps','assistantHistory'].forEach(k=>{if(!Array.isArray(next[k]))next[k]=[];});
+  const source=isPlainObject(raw)?raw:{};
+  const next=mergeObject(clone(defaults),source);
+  next.products=mergeObject(clone(productDefaults),isPlainObject(source.products)?source.products:{});
+  next.maintenance=reconcileById(taskDefaults,Array.isArray(source.maintenance)?source.maintenance:[]);
+  ['analyses','plans','productHistory','waterTopUps','assistantHistory','systemWarnings'].forEach(k=>{if(!Array.isArray(next[k]))next[k]=[];});
   if(!Array.isArray(next.learning?.observations))next.learning.observations=[];
   if(!Array.isArray(next.predictions?.items))next.predictions.items=[];
   next.dataVersion=DATA_VERSION;next.appVersion=APP_VERSION;
   if(next.activePlan?.steps)next.activePlan.steps=next.activePlan.steps.map(s=>({...s,status:s.status||(s.done?'concluido':'pendente'),skipped:Boolean(s.skipped)}));
+  if(next.activePlan&&!activePlanIsCoherent(next.activePlan,next.analyses)){
+   next.activePlan=null;
+   addWarning(next,'invalid-plan','Foi encontrado um plano sem uma análise válida associada. Faça uma nova análise antes de continuar.');
+  }
   return next;
  }
  function parseRaw(key){try{const raw=localStorage.getItem(key);return raw?JSON.parse(raw):null}catch(e){return null}}
  function findRaw(){for(const key of [KEY,...LEGACY_KEYS]){const raw=parseRaw(key);if(raw)return raw;}return null;}
  let state=migrate(findRaw());
  function save(next=state){localStorage.setItem(KEY,JSON.stringify(next));}
- function validateImported(next){if(!next||typeof next!=='object')throw new Error('Estrutura inválida.');if(next.dataVersion!=null&&!Number.isFinite(Number(next.dataVersion)))throw new Error('Versão de dados inválida.');['analyses','waterTopUps','productHistory','assistantHistory'].forEach(k=>{if(next[k]!=null&&!Array.isArray(next[k]))throw new Error(`O campo ${k} é inválido.`);});return true;}
+ function validateImported(next){
+  if(!isPlainObject(next))throw new Error('Estrutura inválida.');
+  if(next.dataVersion!=null&&!Number.isFinite(Number(next.dataVersion)))throw new Error('Versão de dados inválida.');
+  ['analyses','plans','waterTopUps','productHistory','assistantHistory'].forEach(k=>{if(next[k]!=null&&!Array.isArray(next[k]))throw new Error(`O campo ${k} é inválido.`);});
+  if(next.products!=null&&!isPlainObject(next.products))throw new Error('O campo products é inválido.');
+  if(next.activePlan!=null&&!activePlanIsCoherent(next.activePlan,next.analyses||[]))throw new Error('O plano ativo não está associado a uma análise válida. Faça uma nova análise.');
+  for(const analysis of next.analyses||[]){if(!isPlainObject(analysis)||!analysis.id||!validDate(analysis.date))throw new Error('Existe uma análise com identificador ou data inválidos.');}
+  return true;
+ }
  function commit(mutator){const draft=clone(state);mutator(draft);const migrated=migrate(draft);save(migrated);state=migrated;return state;}
  save();
- return{APP_VERSION,DATA_VERSION,get:()=>state,update:commit,replace(next){validateImported(next);const migrated=migrate(next);save(migrated);state=migrated;return state},reset(){state=clone(defaults);save();return state},export(){return JSON.stringify(state,null,2)},validateImported,version:DATA_VERSION};
+ return{APP_VERSION,DATA_VERSION,get:()=>state,update:commit,replace(next){validateImported(next);const migrated=migrate(next);save(migrated);state=migrated;return state},reset(){state=clone(defaults);save();return state},export(){return JSON.stringify(state,null,2)},validateImported,activePlanIsCoherent,version:DATA_VERSION};
 })();
