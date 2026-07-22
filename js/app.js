@@ -137,6 +137,21 @@
     $('maintenancePreview').textContent = `Próxima execução: ${recurrenceLabel({ intervalValue, intervalUnit }).toLowerCase()}, contada a partir da última conclusão.`;
   }
 
+  // Delegated handler remains active after every re-render and avoids inert maintenance buttons.
+  document.addEventListener('click', event => {
+    const doneButton = event.target.closest('[data-maintenance]');
+    if (doneButton) {
+      event.preventDefault();
+      completeMaintenance(doneButton.dataset.maintenance);
+      return;
+    }
+    const editButton = event.target.closest('[data-edit-maintenance]');
+    if (editButton) {
+      event.preventDefault();
+      openMaintenanceEditor(editButton.dataset.editMaintenance);
+    }
+  });
+
   function renderMaintenance() {
     const state = PoolStore.get();
     const list = $('maintenanceList');
@@ -169,14 +184,6 @@
           <button class="text-button" data-edit-maintenance="${escapeHtml(item.id)}">Editar</button>
         </div>`).join('');
     }
-
-    document.querySelectorAll('[data-maintenance]').forEach(button => {
-      button.onclick = () => completeMaintenance(button.dataset.maintenance);
-    });
-
-    document.querySelectorAll('[data-edit-maintenance]').forEach(button => {
-      button.onclick = () => openMaintenanceEditor(button.dataset.editMaintenance);
-    });
 
     document.querySelectorAll('[data-toggle-maintenance]').forEach(input => {
       input.onchange = () => {

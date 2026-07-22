@@ -67,3 +67,8 @@ Cada tarefa pode ser ativada ou desativada e configurada com recorrência em dia
 - Produtos disponíveis e respetivas quantidades passam a ser editáveis na área Piscina.
 - Ao concluir um tratamento, a quantidade utilizada pode ser descontada automaticamente.
 - O motor bloqueia uma dose quando a quantidade configurada do produto é insuficiente.
+
+
+## Atualização V3.7
+
+Copie os ficheiros desta pasta diretamente para a raiz do repositório. Não carregue a pasta PoolCheck-V3.7 como subpasta. Substitua os ficheiros antigos, incluindo sw.js, app.js e chemistry.js. A versão 3.7 força a remoção das caches anteriores.
