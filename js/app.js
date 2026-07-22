@@ -7,21 +7,26 @@
   let onboardingDraft = {};
   let pendingProductStep = null;
 
-  const escapeHtml = value => String(value ?? '')
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;');
+  const escapeHtml = value => String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 
   const formatNumber = (value, digits = 1) => Number(value).toLocaleString('pt-PT', {
     maximumFractionDigits: digits
   });
 
-  const formatDate = value => new Date(value).toLocaleString('pt-PT', {
-    dateStyle: 'medium',
-    timeStyle: 'short'
-  });
+  const formatDate = value => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'Data inválida';
+    try {
+      return date.toLocaleString('pt-PT', { dateStyle: 'medium', timeStyle: 'short' });
+    } catch (_) {
+      return date.toLocaleDateString('pt-PT') + ' ' + date.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
+    }
+  };
 
   function toast(message) {
     const element = $('toast');
@@ -33,7 +38,7 @@
   function go(view) {
     screens.forEach(screen => screen.classList.toggle('active', screen.id === view));
     navButtons.forEach(button => button.classList.toggle('active', button.dataset.view === view));
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (_) { window.scrollTo(0, 0); }
     if (view === 'assistant') renderAssistant();
     if (view === 'details') renderDetails();
   }
@@ -408,7 +413,7 @@
       const before = Number(product.quantity) || 0;
       product.quantity = Number((before - used).toFixed(3));
       state.productHistory.unshift({
-        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+        id: (window.crypto && typeof window.crypto.randomUUID === 'function') ? window.crypto.randomUUID() : String(Date.now()) + '-' + Math.random().toString(16).slice(2),
         date: new Date().toISOString(),
         productId: step.productId,
         productName: product.name,
@@ -622,7 +627,7 @@
         history: state.waterTopUps
       });
       const entry = {
-        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+        id: (window.crypto && typeof window.crypto.randomUUID === 'function') ? window.crypto.randomUUID() : String(Date.now()) + '-' + Math.random().toString(16).slice(2),
         date: result.createdAt,
         ...result
       };
@@ -830,7 +835,7 @@
   $('analysisForm').onsubmit = event => {
     event.preventDefault();
     const analysis = {
-      id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+      id: (window.crypto && typeof window.crypto.randomUUID === 'function') ? window.crypto.randomUUID() : String(Date.now()) + '-' + Math.random().toString(16).slice(2),
       date: new Date().toISOString(),
       ph: Number($('ph').value),
       freeChlorine: Number($('freeChlorine').value),
